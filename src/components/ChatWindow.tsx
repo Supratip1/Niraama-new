@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Mic, Edit2 } from 'lucide-react';
+import { Send, Paperclip, Mic, Edit2, User } from 'lucide-react';
+import { signOut } from 'firebase/auth'; // Import signOut
 import TypingAnimation from './TypingAnimation';
 
 export interface Message {
@@ -10,7 +11,6 @@ export interface Message {
   timestamp: number;
 }
 
-// Declare global types for SpeechRecognition (for TypeScript)
 declare global {
   interface Window {
     SpeechRecognition: any;
@@ -20,9 +20,10 @@ declare global {
 
 interface ChatWindowProps {
   onNewChat: (firstMessage: Message) => void;
+  userPhotoURL: string;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat, userPhotoURL }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -31,7 +32,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null); // Reference for SpeechRecognition
+  const recognitionRef = useRef<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,28 +43,35 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
   }, [messages]);
 
   useEffect(() => {
-    // Send welcome message when component mounts
-    setTimeout(() => {
-      const welcomeMessage: Message = {
-        id: crypto.randomUUID(),
-        type: 'text',
-        content: 'Hi! I am Niraama, your mental health companion. How are you feeling today?',
-        sender: 'bot',
-        timestamp: Date.now(),
-      };
-      setMessages([welcomeMessage]);
-    }, 500);
+    const welcomeMessage: Message = {
+      id: crypto.randomUUID(),
+      type: 'text',
+      content: 'Hi! I am Niraama, your mental health companion. How are you feeling today?',
+      sender: 'bot',
+      timestamp: Date.now(),
+    };
+    setMessages([welcomeMessage]);
   }, []);
+
+  // Sign out function
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth); // Ensure 'auth' is defined and available
+      console.log('User signed out');
+      // Optionally notify parent component or update state
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   // Initialize SpeechRecognition API
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      recognition.lang = 'en-US'; // Set language
-      recognition.continuous = false; // Stops listening after a single input
-      recognition.interimResults = false; // Final results only
+      recognition.lang = 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = false;
       recognition.maxAlternatives = 1;
 
       recognition.onstart = () => setIsListening(true);
@@ -144,16 +152,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
         msg.id === messageBeingEdited.id ? { ...msg, content: messageBeingEdited.content } : msg
       );
       setMessages(updatedMessages);
-      setMessageBeingEdited(null); // Close the edit mode
-      handleBotResponse(messageBeingEdited.content); // Trigger new bot response
+      setMessageBeingEdited(null);
+      handleBotResponse(messageBeingEdited.content);
     }
   };
 
   const handleBotResponse = (userMessage: string) => {
-    // Show typing animation
     setIsTyping(true);
 
-    // First bot reply (1/2)
     setTimeout(() => {
       const firstBotReply: Message = {
         id: crypto.randomUUID(),
@@ -164,7 +170,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
       };
       setMessages((prev) => [...prev, firstBotReply]);
 
-      // Second bot reply (2/2)
       setTimeout(() => {
         const secondBotReply: Message = {
           id: crypto.randomUUID(),
@@ -188,7 +193,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full w-full bg-gray-50 relative">
+      {/* Display User Photo and Sign Out Option */}
+      <div 
+        className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 cursor-pointer" 
+        onClick={handleSignOut}
+      >
+        {userPhotoURL ? (
+          <img src={userPhotoURL} alt="User" className="w-10 h-10 rounded-full" />
+        ) : (
+          <User className="w-6 h-6 text-gray-700" />
+        )}
+      </div>
+
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
           <div
@@ -203,34 +220,34 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
               }`}
             >
               {msg.id === messageBeingEdited?.id ? (
-                <input
-                  type="text"
-                  value={messageBeingEdited?.content || ''}
-                  onChange={(e) =>
-                    setMessageBeingEdited((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            content: e.target.value,
-                          }
-                        : null
-                    )
-                  }
-                  onKeyDown={(e) => e.key === 'Enter' && handleEditMessageSave()}
-                  className="p-2 rounded border w-full bg-white text-gray-800"
-                  style={{ padding: '10px', fontSize: '14px', color: '#333', borderColor: '#ccc' }}
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={messageBeingEdited.content || ''}
+                    onChange={(e) =>
+                      setMessageBeingEdited({ ...messageBeingEdited, content: e.target.value })
+                    }
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') handleEditMessageSave();
+                    }}
+                    className="p-2 border rounded"
+                  />
+                  <button onClick={handleEditMessageSave} className="text-blue-500">
+                    Save
+                  </button>
+                </div>
               ) : msg.type === 'text' ? (
                 <>
-                  {msg.content}
+                  <span>{msg.content}</span>
                   {msg.sender === 'user' && hoveredMessageId === msg.id && (
-                    <button
-                      className="absolute top-1 right-2"
-                      onClick={() => setMessageBeingEdited(msg)}
-                    >
-                      <Edit2 className="w-4 h-4 text-white" />
-                    </button>
-                  )}
+  <button
+    className="absolute top-1 right-2"
+    onClick={() => setMessageBeingEdited({ ...msg })} // Ensure the entire message is copied for editing
+  >
+    <Edit2 className="w-4 h-4 text-white" />
+  </button>
+)}
+
                 </>
               ) : (
                 <img src={msg.content} alt="Uploaded" className="max-w-xs rounded" />
@@ -270,7 +287,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
             className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           />
           <button
-            onClick={handleMicClick} // Handle voice input
+            onClick={handleMicClick}
             className={`p-2 rounded-full transition-colors ${isListening ? 'bg-green-500' : 'hover:bg-gray-100'}`}
             title="Voice input"
           >
@@ -287,7 +304,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewChat }) => {
       </div>
     </div>
   );
-  
 };
 
 export default ChatWindow;
