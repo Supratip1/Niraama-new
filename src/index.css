@@ -21,3 +21,17 @@ body {
   width: 100%;
   height: 100vh;
 }
+/* Assuming this is the root container of your application */
+.root-container {
+  height: 100vh; /* Set the height to 100% of the viewport height */
+  display: flex; /* Use flexbox for layout */
+  flex-direction: column; /* Arrange children vertically */
+}
+
+/* Assuming this is the container for the chat window */
+.chat-window-container {
+  flex: 1; /* Allow the chat window to grow and fill the available space */
+  overflow-y: auto; /* Add vertical scroll if content exceeds the height */
+}
+
+/* Additional styles as needed for responsiveness */

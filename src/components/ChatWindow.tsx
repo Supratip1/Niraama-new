@@ -25,17 +25,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
   const [isListening, setIsListening] = useState(false);
   const [messageBeingEdited, setMessageBeingEdited] = useState<Message | null>(null);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // Reset messages when switching chats or starting a new chat
   useEffect(() => {
     if (chatId) {
       loadChat(chatId);
     } else {
-      // New chat - show welcome message
       setMessages([WELCOME_MESSAGE]);
       setMessage('');
       setMessageBeingEdited(null);
@@ -47,7 +45,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     if (chat) {
       setMessages(chat.messages);
     } else {
-      // Fallback to welcome message if chat not found
       setMessages([WELCOME_MESSAGE]);
     }
     setMessage('');
@@ -69,7 +66,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     setMessages(updatedMessages);
     setMessage('');
 
-    // Create new chat or update existing one
     if (auth.currentUser) {
       if (!chatId) {
         const chat = await createChat(auth.currentUser.uid, newMessage);
@@ -79,7 +75,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       }
     }
 
-    // Show typing animation and send bot response
     setIsTyping(true);
     setTimeout(() => {
       const botMessage: Message = {
@@ -92,8 +87,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       const messagesWithBot = [...updatedMessages, botMessage];
       setMessages(messagesWithBot);
       setIsTyping(false);
-      
-      // Update chat with bot response
+
       if (auth.currentUser && chatId) {
         updateChat(chatId, messagesWithBot);
       }
@@ -155,7 +149,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       const newMessages = [...updatedMessages, botMessage];
       setMessages(newMessages);
       setIsTyping(false);
-      
+
       if (auth.currentUser && chatId) {
         updateChat(chatId, newMessages);
       }
@@ -176,7 +170,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
       const recognition = new SpeechRecognition();
-      
+
       recognition.lang = 'en-US';
       recognition.continuous = false;
       recognition.interimResults = false;
@@ -207,7 +201,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
 
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 relative">
-      <div className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-gray-200">
+      {/* User Icon Container */}
+      <div
+        className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 z-10"
+        style={{ zIndex: 10 }}
+      >
         {userPhotoURL ? (
           <img src={userPhotoURL} alt="User" className="w-10 h-10 rounded-full" />
         ) : (
@@ -215,7 +213,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Chat messages container with padding on the right to prevent overlap */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pr-16">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -279,6 +278,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Message input section */}
       <div className="border-t bg-white p-4">
         <div className="flex items-center gap-2 max-w-4xl mx-auto">
           <input
