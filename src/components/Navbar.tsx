@@ -50,6 +50,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
       const result = await signInWithPopup(auth, provider);
       onUserSignIn(result.user.photoURL || '');
@@ -63,6 +64,7 @@ const Navbar: React.FC<NavbarProps> = ({
     try {
       await signOut(auth);
       setIsLoggedIn(false);
+      setChatHistory([]);
       onUserSignOut();
     } catch (error) {
       console.error('Error signing out:', error);
