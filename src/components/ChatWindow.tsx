@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Mic, Edit2, User } from 'lucide-react';
+import { Send, Paperclip, Mic, Edit2, User, Brain, Heart, Users, Coffee } from 'lucide-react';
 import { auth } from '../Auth';
 import TypingAnimation from './TypingAnimation';
 import { Message, createChat, getChat, updateChat } from '../utils/chatStorage';
@@ -18,6 +18,29 @@ const WELCOME_MESSAGE: Message = {
   timestamp: Date.now(),
 };
 
+const RESOURCE_BUTTONS = [
+  {
+    icon: Brain,
+    title: "Feeling Anxious?",
+    description: "Let's explore coping strategies together",
+  },
+  {
+    icon: Heart,
+    title: "Need Support?",
+    description: "Share what's on your mind",
+  },
+  {
+    icon: Users,
+    title: "Relationship Issues?",
+    description: "Let's talk about your connections",
+  },
+  {
+    icon: Coffee,
+    title: "Daily Stress?",
+    description: "Discover relaxation techniques",
+  },
+];
+
 const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -25,14 +48,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
   const [isListening, setIsListening] = useState(false);
   const [messageBeingEdited, setMessageBeingEdited] = useState<Message | null>(null);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
-
+  const [hasInteracted, setHasInteracted] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (chatId) {
       loadChat(chatId);
+      setHasInteracted(true);
     } else {
       setMessages([WELCOME_MESSAGE]);
       setMessage('');
@@ -51,9 +77,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     setMessageBeingEdited(null);
   };
 
+  const handleResourceClick = (title: string) => {
+    setMessage(`I'd like to talk about ${title.toLowerCase()}`);
+    setHasInteracted(true);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  };
+
   const sendMessage = async (messageContent: string) => {
     if (!messageContent.trim()) return;
 
+    setHasInteracted(true);
     const newMessage: Message = {
       id: crypto.randomUUID(),
       type: 'text',
@@ -87,7 +122,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       const messagesWithBot = [...updatedMessages, botMessage];
       setMessages(messagesWithBot);
       setIsTyping(false);
-
+      
       if (auth.currentUser && chatId) {
         updateChat(chatId, messagesWithBot);
       }
@@ -102,6 +137,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setHasInteracted(true);
     const newMessage: Message = {
       id: crypto.randomUUID(),
       type: 'file',
@@ -149,7 +185,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       const newMessages = [...updatedMessages, botMessage];
       setMessages(newMessages);
       setIsTyping(false);
-
+      
       if (auth.currentUser && chatId) {
         updateChat(chatId, newMessages);
       }
@@ -158,7 +194,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
 
   const handleMicClick = () => {
     if (!recognitionRef.current) return;
-
+    setHasInteracted(true);
     if (isListening) {
       recognitionRef.current.stop();
     } else {
@@ -170,7 +206,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
       const recognition = new SpeechRecognition();
-
+      
       recognition.lang = 'en-US';
       recognition.continuous = false;
       recognition.interimResults = false;
@@ -199,13 +235,54 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     }
   };
 
+  const renderChatInput = () => (
+    <div className="flex items-center gap-2 max-w-4xl mx-auto">
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleFileUpload}
+        accept="image/*"
+      />
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+        title="Attach file"
+      >
+        <Paperclip className="w-5 h-5 text-gray-500" />
+      </button>
+      <input
+        ref={inputRef}
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyPress={handleKeyPress}
+        placeholder="Type your message..."
+        className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+      />
+      <button
+        onClick={handleMicClick}
+        className={`p-2 rounded-full transition-colors ${
+          isListening ? 'bg-green-500' : 'hover:bg-gray-100'
+        }`}
+        title="Voice input"
+      >
+        <Mic className="w-5 h-5 text-gray-500" />
+      </button>
+      <button
+        onClick={handleSendMessage}
+        className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        title="Send message"
+        disabled={!message.trim()}
+      >
+        <Send className="w-5 h-5" />
+      </button>
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 relative">
-      {/* User Icon Container */}
-      <div
-        className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 z-10"
-        style={{ zIndex: 10 }}
-      >
+      <div className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-gray-200">
         {userPhotoURL ? (
           <img src={userPhotoURL} alt="User" className="w-10 h-10 rounded-full" />
         ) : (
@@ -213,115 +290,104 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
         )}
       </div>
 
-      {/* Chat messages container with padding on the right to prevent overlap */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pr-16">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`relative flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-            onMouseEnter={() => setHoveredMessageId(msg.id)}
-            onMouseLeave={() => setHoveredMessageId(null)}
-          >
-            <div
-              className={`max-w-[70%] p-3 rounded-lg shadow-sm ${
-                msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'
-              }`}
-            >
-              {msg.id === messageBeingEdited?.id ? (
-                <div>
-                  <input
-                    type="text"
-                    value={messageBeingEdited.content}
-                    onChange={(e) =>
-                      setMessageBeingEdited({
-                        ...messageBeingEdited,
-                        content: e.target.value,
-                      })
-                    }
-                    className="p-2 border rounded text-gray-800 w-full"
-                    autoFocus
-                  />
-                  <button
-                    onClick={handleEditMessageSave}
-                    className="ml-2 text-blue-200 hover:text-white"
-                  >
-                    Save
-                  </button>
-                </div>
-              ) : msg.type === 'text' ? (
-                <>
-                  <span>{msg.content}</span>
-                  {msg.sender === 'user' && hoveredMessageId === msg.id && (
-                    <button
-                      className="absolute top-1 right-2"
-                      onClick={() => setMessageBeingEdited({ ...msg })}
-                    >
-                      <Edit2 className="w-4 h-4 text-white" />
-                    </button>
-                  )}
-                </>
-              ) : (
-                <img
-                  src={msg.content}
-                  alt="Uploaded"
-                  className="max-w-xs rounded"
-                />
-              )}
+      <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${!hasInteracted ? 'flex flex-col items-center justify-center' : ''}`}>
+        {!hasInteracted ? (
+          <div className="w-full max-w-2xl space-y-8 transform transition-all duration-500 ease-in-out">
+            <div className="text-center space-y-2 mb-8">
+              <h1 className="text-4xl font-bold text-gray-800">Welcome to Niraama</h1>
+              <p className="text-lg text-gray-600">Your mental health companion</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {RESOURCE_BUTTONS.map((button, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleResourceClick(button.title)}
+                  className="flex items-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
+                >
+                  <button.icon className="w-8 h-8 text-blue-500 mr-4" />
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-800">{button.title}</h3>
+                    <p className="text-sm text-gray-600">{button.description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="w-full max-w-xl mx-auto">
+              {renderChatInput()}
             </div>
           </div>
-        ))}
-        {isTyping && (
-          <div className="flex justify-start">
-            <TypingAnimation />
-          </div>
+        ) : (
+          <>
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`relative flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                onMouseEnter={() => setHoveredMessageId(msg.id)}
+                onMouseLeave={() => setHoveredMessageId(null)}
+              >
+                <div
+                  className={`max-w-[70%] p-3 rounded-lg shadow-sm ${
+                    msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'
+                  }`}
+                >
+                  {msg.id === messageBeingEdited?.id ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={messageBeingEdited.content}
+                        onChange={(e) =>
+                          setMessageBeingEdited({
+                            ...messageBeingEdited,
+                            content: e.target.value,
+                          })
+                        }
+                        className="p-2 border rounded text-gray-800 w-full"
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleEditMessageSave}
+                        className="ml-2 text-blue-200 hover:text-white"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : msg.type === 'text' ? (
+                    <>
+                      <span>{msg.content}</span>
+                      {msg.sender === 'user' && hoveredMessageId === msg.id && (
+                        <button
+                          className="absolute top-1 right-2"
+                          onClick={() => setMessageBeingEdited({ ...msg })}
+                        >
+                          <Edit2 className="w-4 h-4 text-white" />
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <img
+                      src={msg.content}
+                      alt="Uploaded"
+                      className="max-w-xs rounded"
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <TypingAnimation />
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Message input section */}
-      <div className="border-t bg-white p-4">
-        <div className="flex items-center gap-2 max-w-4xl mx-auto">
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={handleFileUpload}
-            accept="image/*"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            title="Attach file"
-          >
-            <Paperclip className="w-5 h-5 text-gray-500" />
-          </button>
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-          />
-          <button
-            onClick={handleMicClick}
-            className={`p-2 rounded-full transition-colors ${
-              isListening ? 'bg-green-500' : 'hover:bg-gray-100'
-            }`}
-            title="Voice input"
-          >
-            <Mic className="w-5 h-5 text-gray-500" />
-          </button>
-          <button
-            onClick={handleSendMessage}
-            className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Send message"
-            disabled={!message.trim()}
-          >
-            <Send className="w-5 h-5" />
-          </button>
+      {hasInteracted && (
+        <div className="border-t bg-white p-4 transform transition-all duration-500 ease-in-out">
+          {renderChatInput()}
         </div>
-      </div>
+      )}
     </div>
   );
 };
