@@ -22,7 +22,16 @@ export const createChat = async (userId: string, firstMessage: Message): Promise
     id: crypto.randomUUID(),
     userId,
     title: firstMessage.content.slice(0, 50) + '...',
-    messages: [firstMessage],
+    messages: [
+      {
+        id: crypto.randomUUID(),
+        type: 'text',
+        content: 'Hi! I am Niraama, your mental health companion. How are you feeling today?',
+        sender: 'bot',
+        timestamp: Date.now() - 1000,
+      },
+      firstMessage
+    ],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -59,8 +68,18 @@ export const updateChat = async (chatId: string, messages: Message[]): Promise<v
     chats[chatIndex] = {
       ...chats[chatIndex],
       messages,
+      title: messages.find(m => m.sender === 'user')?.content.slice(0, 50) + '...' || chats[chatIndex].title,
       updatedAt: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
   }
+};
+
+export const deleteChat = async (chatId: string): Promise<void> => {
+  const storedChats = localStorage.getItem(STORAGE_KEY);
+  if (!storedChats) return;
+  
+  const chats: ChatSession[] = JSON.parse(storedChats);
+  const updatedChats = chats.filter(chat => chat.id !== chatId);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedChats));
 };

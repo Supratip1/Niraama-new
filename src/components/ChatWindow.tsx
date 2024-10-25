@@ -56,26 +56,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (chatId) {
-      loadChat(chatId);
-      setHasInteracted(true);
-    } else {
-      setMessages([WELCOME_MESSAGE]);
+    const initializeChat = async () => {
+      if (chatId) {
+        const chat = await getChat(chatId);
+        if (chat) {
+          setMessages(chat.messages);
+          setHasInteracted(true);
+        }
+      } else {
+        setMessages([WELCOME_MESSAGE]);
+        setHasInteracted(false);
+      }
       setMessage('');
       setMessageBeingEdited(null);
-    }
-  }, [chatId]);
+    };
 
-  const loadChat = async (id: string) => {
-    const chat = await getChat(id);
-    if (chat) {
-      setMessages(chat.messages);
-    } else {
-      setMessages([WELCOME_MESSAGE]);
-    }
-    setMessage('');
-    setMessageBeingEdited(null);
-  };
+    initializeChat();
+  }, [chatId]);
 
   const handleResourceClick = (title: string) => {
     setMessage(`I'd like to talk about ${title.toLowerCase()}`);
