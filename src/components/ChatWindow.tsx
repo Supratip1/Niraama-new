@@ -10,6 +10,14 @@ interface ChatWindowProps {
   onNewChat: (chatId: string) => void;
 }
 
+const WELCOME_MESSAGE: Message = {
+  id: crypto.randomUUID(),
+  type: 'text',
+  content: 'Hi! I am Niraama, your mental health companion. How are you feeling today?',
+  sender: 'bot',
+  timestamp: Date.now(),
+};
+
 const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -22,17 +30,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
+  // Reset messages when switching chats or starting a new chat
   useEffect(() => {
     if (chatId) {
       loadChat(chatId);
     } else {
-      setMessages([{
-        id: crypto.randomUUID(),
-        type: 'text',
-        content: 'Hi! I am Niraama, your mental health companion. How are you feeling today?',
-        sender: 'bot',
-        timestamp: Date.now(),
-      }]);
+      // New chat - show welcome message
+      setMessages([WELCOME_MESSAGE]);
+      setMessage('');
+      setMessageBeingEdited(null);
     }
   }, [chatId]);
 
@@ -40,7 +46,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     const chat = await getChat(id);
     if (chat) {
       setMessages(chat.messages);
+    } else {
+      // Fallback to welcome message if chat not found
+      setMessages([WELCOME_MESSAGE]);
     }
+    setMessage('');
+    setMessageBeingEdited(null);
   };
 
   const sendMessage = async (messageContent: string) => {
@@ -58,7 +69,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     setMessages(updatedMessages);
     setMessage('');
 
-    // Only persist chat if user is signed in
+    // Create new chat or update existing one
     if (auth.currentUser) {
       if (!chatId) {
         const chat = await createChat(auth.currentUser.uid, newMessage);
@@ -82,7 +93,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       setMessages(messagesWithBot);
       setIsTyping(false);
       
-      // Only persist chat if user is signed in
+      // Update chat with bot response
       if (auth.currentUser && chatId) {
         updateChat(chatId, messagesWithBot);
       }
@@ -108,7 +119,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
 
-    // Only persist chat if user is signed in
     if (auth.currentUser) {
       if (!chatId) {
         const chat = await createChat(auth.currentUser.uid, newMessage);
@@ -129,7 +139,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
     setMessages(updatedMessages);
     setMessageBeingEdited(null);
 
-    // Only persist chat if user is signed in
     if (auth.currentUser && chatId) {
       await updateChat(chatId, updatedMessages);
     }
@@ -147,7 +156,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       setMessages(newMessages);
       setIsTyping(false);
       
-      // Only persist chat if user is signed in
       if (auth.currentUser && chatId) {
         updateChat(chatId, newMessages);
       }
@@ -231,7 +239,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
                         content: e.target.value,
                       })
                     }
-                    className="p-2 border rounded text-gray-800"
+                    className="p-2 border rounded text-gray-800 w-full"
+                    autoFocus
                   />
                   <button
                     onClick={handleEditMessageSave}

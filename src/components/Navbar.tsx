@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, X, MessageSquare } from 'lucide-react';
+import { Brain, Plus, MoreVertical, Trash2, MessageSquare, X } from 'lucide-react';
 import { auth } from '../Auth';
 import {
   signInWithPopup,
@@ -9,10 +9,11 @@ import {
 } from 'firebase/auth';
 import { getChats, ChatSession } from '../utils/ChatStorage';
 
+
 interface NavbarProps {
   onUserSignIn: (photoURL: string) => void;
   onUserSignOut: () => void;
-  onChatSelect: (chatId: string) => void;
+  onChatSelect: (chatId: string | null) => void;
   currentChatId: string | null;
 }
 
@@ -22,10 +23,10 @@ const Navbar: React.FC<NavbarProps> = ({
   onChatSelect,
   currentChatId,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAboutModal, setIsAboutModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const [menuOpenChatId, setMenuOpenChatId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -50,7 +51,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
+    provider.setCustomParameters({ prompt: 'select_account' }); // Forces Google to prompt account selection
     try {
       const result = await signInWithPopup(auth, provider);
       onUserSignIn(result.user.photoURL || '');
@@ -64,62 +65,113 @@ const Navbar: React.FC<NavbarProps> = ({
     try {
       await signOut(auth);
       setIsLoggedIn(false);
-      setChatHistory([]);
       onUserSignOut();
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
+  const handleDeleteChat = async (chatId: string) => {
+    const storedChats = localStorage.getItem('niraama_chats');
+    if (!storedChats) return;
+    
+    const chats: ChatSession[] = JSON.parse(storedChats);
+    const updatedChats = chats.filter(chat => chat.id !== chatId);
+    localStorage.setItem('niraama_chats', JSON.stringify(updatedChats));
+    
+    if (auth.currentUser) {
+      loadChatHistory(auth.currentUser.uid);
+    }
+
+    if (currentChatId === chatId) {
+      onChatSelect(null);
+    }
+    setMenuOpenChatId(null);
+  };
+
+  const handleNewChat = () => {
+    onChatSelect(null);
+    setMenuOpenChatId(null);
+  };
+
   return (
     <div className="w-64 bg-gray-900 text-white h-full p-4 flex flex-col">
-      <div className="flex items-center gap-3 mb-8 px-2">
+      <div className="flex items-center gap-3 mb-6 px-2">
         <Brain className="w-8 h-8 text-blue-400" />
         <span className="text-xl font-semibold">Niraama</span>
       </div>
 
-      <div className="flex-1">
-        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4 px-2 text-gray-400">
-          Chat History
-        </h2>
-        <div className="space-y-2">
-          {chatHistory.length > 0 ? (
-            chatHistory.map((chat) => (
+      <button
+        onClick={handleNewChat}
+        className="w-full mb-4 flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2.5 rounded-lg"
+      >
+        <Plus className="w-4 h-4" />
+        New Chat
+      </button>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-1">
+          {chatHistory.map((chat) => (
+            <div
+              key={chat.id}
+              className={`group relative flex items-center ${
+                currentChatId === chat.id
+                  ? 'bg-gray-800'
+                  : 'hover:bg-gray-800'
+              } rounded-lg transition-colors`}
+            >
               <button
-                key={chat.id}
                 onClick={() => onChatSelect(chat.id)}
-                className={`w-full px-3 py-2 text-left rounded-lg transition-colors ${
-                  currentChatId === chat.id
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                }`}
+                className="flex-1 flex items-center gap-2 px-3 py-2.5 text-left"
               >
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  <span className="truncate">{chat.title || 'New Chat'}</span>
-                </div>
+                <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate text-sm">
+                  {chat.title || 'New Chat'}
+                </span>
               </button>
-            ))
-          ) : (
-            <div className="px-2 py-2 text-sm text-gray-400">
-              No previous chats
+              <div className="relative px-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpenChatId(menuOpenChatId === chat.id ? null : chat.id);
+                  }}
+                  className={`p-1 rounded hover:bg-gray-700 ${
+                    menuOpenChatId === chat.id
+                      ? 'opacity-100'
+                      : 'opacity-0 group-hover:opacity-100'
+                  } transition-opacity`}
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                {menuOpenChatId === chat.id && (
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-gray-800 rounded-lg shadow-lg py-1 z-50">
+                    <button
+                      onClick={() => handleDeleteChat(chat.id)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete chat
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          ))}
         </div>
       </div>
 
-      <div className="mt-auto space-y-2">
+      <div className="mt-auto space-y-2 pt-4 border-t border-gray-800">
         {!isLoggedIn ? (
           <button
             onClick={handleGoogleSignIn}
-            className="w-full text-sm bg-blue-600 hover:bg-blue-700 text-white transition-colors px-4 py-2 rounded-lg"
+            className="w-full text-sm bg-gray-800 hover:bg-gray-700 transition-colors px-4 py-2 rounded-lg"
           >
             Sign in with Google
           </button>
         ) : (
           <button
             onClick={handleSignOut}
-            className="w-full text-sm bg-gray-800 hover:bg-gray-700 text-white transition-colors px-4 py-2 rounded-lg"
+            className="w-full text-sm bg-gray-800 hover:bg-gray-700 transition-colors px-4 py-2 rounded-lg"
           >
             Sign Out
           </button>

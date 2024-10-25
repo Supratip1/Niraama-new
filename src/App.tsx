@@ -1,30 +1,54 @@
-import React, { useState } from 'react';
-import Navbar from '../src/components/Navbar';
-import ChatWindow from '../src/components/ChatWindow';
-import { Message } from '../src/components/ChatWindow';
+import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
+import ChatWindow from './components/ChatWindow';
+import { auth } from './Auth';
+import { onAuthStateChanged } from 'firebase/auth';
 
-const App: React.FC = () => {
-  const [userPhotoURL, setUserPhotoURL] = useState<string>(''); // State to hold user photo URL
+const App = () => {
+  const [userPhotoURL, setUserPhotoURL] = useState<string>('');
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserPhotoURL(user.photoURL || '');
+      } else {
+        setUserPhotoURL('');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleUserSignIn = (photoURL: string) => {
-    setUserPhotoURL(photoURL); // Update user photo URL on sign-in
+    setUserPhotoURL(photoURL);
   };
 
   const handleUserSignOut = () => {
-    setUserPhotoURL(''); // Reset photo URL on sign-out to show default icon
+    setUserPhotoURL('');
+    setCurrentChatId(null);
   };
 
-  const handleNewChat = (firstMessage: Message) => {
-    console.log('New chat started with message:', firstMessage);
+  const handleChatSelect = (chatId: string | null) => {
+    setCurrentChatId(chatId);
   };
 
   return (
-    <div className="flex h-screen">
-      <Navbar
-        onUserSignIn={handleUserSignIn}
-        onUserSignOut={handleUserSignOut} // Pass the sign-out handler
+    <div className="flex h-screen bg-gray-50">
+      <Navbar 
+        onUserSignIn={handleUserSignIn} 
+        onUserSignOut={handleUserSignOut}
+        onChatSelect={handleChatSelect}
+        currentChatId={currentChatId}
       />
-      <ChatWindow onNewChat={handleNewChat} userPhotoURL={userPhotoURL} />
+      <div className="w-px bg-gray-200"></div>
+      <div className="flex-1">
+        <ChatWindow 
+          userPhotoURL={userPhotoURL}
+          chatId={currentChatId}
+          onNewChat={(chatId) => setCurrentChatId(chatId)}
+        />
+      </div>
     </div>
   );
 };
