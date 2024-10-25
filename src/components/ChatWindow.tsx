@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, Mic, Edit2, User, Brain, Heart, Users, Coffee } from 'lucide-react';
 import { auth } from '../Auth';
 import TypingAnimation from './TypingAnimation';
-import { Message, createChat, getChat, updateChat } from '../utils/chatStorage';
+import { Message, createChat, getChat, updateChat } from '../utils/ChatStorage';
 
 interface ChatWindowProps {
   userPhotoURL: string;
@@ -290,7 +290,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
         )}
       </div>
 
-      <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${!hasInteracted ? 'flex flex-col items-center justify-center' : ''}`}>
+      <div className={`flex-1 overflow-y-auto pt-4 pr-16 p-4 space-y-4 ${!hasInteracted ? 'flex flex-col items-center justify-center' : ''}`}>
+
         {!hasInteracted ? (
           <div className="w-full max-w-2xl space-y-8 transform transition-all duration-500 ease-in-out">
             <div className="text-center space-y-2 mb-8">
