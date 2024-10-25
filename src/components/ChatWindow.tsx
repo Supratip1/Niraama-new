@@ -3,7 +3,7 @@ import { Send, Paperclip, Mic, Edit2, User, Brain, Heart, Users, Coffee } from '
 import { auth } from '../Auth';
 import TypingAnimation from './TypingAnimation';
 import { Message, createChat, getChat, updateChat } from '../utils/ChatStorage';
-
+import AnimatedBackground from './AnimatedBackground';
 interface ChatWindowProps {
   userPhotoURL: string;
   chatId: string | null;
@@ -49,7 +49,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
   const [messageBeingEdited, setMessageBeingEdited] = useState<Message | null>(null);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
-  
+  const [showAnimation, setShowAnimation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -77,6 +77,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
   const handleResourceClick = (title: string) => {
     setMessage(`I'd like to talk about ${title.toLowerCase()}`);
     setHasInteracted(true);
+    setShowAnimation(true);
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
@@ -279,6 +280,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
 
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 relative">
+       {/* Animated Background - Only shown after user interacts */}
+       {showAnimation && <AnimatedBackground />} 
       <div className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-gray-200">
         {userPhotoURL ? (
           <img src={userPhotoURL} alt="User" className="w-10 h-10 rounded-full" />
@@ -290,7 +293,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       <div className={`flex-1 overflow-y-auto pt-4 pr-16 p-4 space-y-4 ${!hasInteracted ? 'flex flex-col items-center justify-center' : ''}`}>
 
         {!hasInteracted ? (
-          <div className="w-full max-w-2xl space-y-8 transform transition-all duration-500 ease-in-out">
+          <div className="w-full max-w-2xl space-y-8 transform transition-all duration-500 ease-in-out mt-10">
             <div className="text-center space-y-2 mb-8">
               <h1 className="text-4xl font-bold text-gray-800">Welcome to Niraama</h1>
               <p className="text-lg text-gray-600">Your mental health companion</p>

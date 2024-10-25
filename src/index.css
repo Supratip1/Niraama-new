@@ -33,5 +33,7 @@ body {
   flex: 1; /* Allow the chat window to grow and fill the available space */
   overflow-y: auto; /* Add vertical scroll if content exceeds the height */
 }
-
+.bg-opacity-70 {
+  background-color: rgba(255, 255, 255, 0.7); /* Slightly transparent white */
+}
 /* Additional styles as needed for responsiveness */
