@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import ChatWindow from './components/ChatWindow';
 import { auth } from './Auth';
 import { onAuthStateChanged } from 'firebase/auth';
+import BackgroundMusic from '../src/components/BackgroundMusic'
 
 const App = () => {
   const [userPhotoURL, setUserPhotoURL] = useState<string>('');
@@ -48,6 +49,7 @@ const App = () => {
           chatId={currentChatId}
           onNewChat={(chatId) => setCurrentChatId(chatId)}
         />
+        <BackgroundMusic/>
       </div>
     </div>
   );
