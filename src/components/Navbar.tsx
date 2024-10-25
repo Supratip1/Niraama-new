@@ -60,7 +60,11 @@ const Navbar: React.FC<NavbarProps> = ({
       console.error('Error signing in with Google:', error);
     }
   };
-
+  const truncateTitle = (title: string) => {
+    const words = title.split(' ');
+    return words.slice(0, 4).join(' ') + (words.length > 4 ? '...' : '');
+  };
+  
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -126,7 +130,7 @@ const Navbar: React.FC<NavbarProps> = ({
               >
                 <MessageSquare className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate text-sm">
-                  {chat.title || 'New Chat'}
+                {truncateTitle(chat.title || 'New Chat')}
                 </span>
               </button>
               <div className="relative px-2">
