@@ -130,7 +130,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </button>
               <button
                 onClick={() => handleDeleteChat(chat.id)}
-                className="ml-2 p-1 rounded text-red-400 hover:bg-gray-700"
+                className="ml-2 p-1 rounded text-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 title="Delete chat"
               >
                 <Trash2 className="w-4 h-4" />
