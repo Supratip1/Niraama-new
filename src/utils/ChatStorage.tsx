@@ -17,20 +17,31 @@ export interface Message {
 
 const STORAGE_KEY = 'niraama_chats';
 
+const WELCOME_MESSAGE: Message = {
+  id: crypto.randomUUID(),
+  type: 'text',
+  content: 'Hi! I am Niraama, your mental health companion. How are you feeling today?',
+  sender: 'bot',
+  timestamp: Date.now(),
+};
+
+const BOT_RESPONSE: Message = {
+  id: crypto.randomUUID(),
+  type: 'text',
+  content: "I'm here to listen and support you. Would you like to tell me more about what's on your mind?",
+  sender: 'bot',
+  timestamp: Date.now(),
+};
+
 export const createChat = async (userId: string, firstMessage: Message): Promise<ChatSession> => {
   const chat: ChatSession = {
     id: crypto.randomUUID(),
     userId,
     title: firstMessage.content.slice(0, 50) + '...',
     messages: [
-      {
-        id: crypto.randomUUID(),
-        type: 'text',
-        content: 'Hi! I am Niraama, your mental health companion. How are you feeling today?',
-        sender: 'bot',
-        timestamp: Date.now() - 1000,
-      },
-      firstMessage
+      { ...WELCOME_MESSAGE, timestamp: Date.now() - 2000 },
+      firstMessage,
+      { ...BOT_RESPONSE, id: crypto.randomUUID(), timestamp: Date.now() }
     ],
     createdAt: Date.now(),
     updatedAt: Date.now(),

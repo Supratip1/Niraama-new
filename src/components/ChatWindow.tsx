@@ -62,10 +62,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
         if (chat) {
           setMessages(chat.messages);
           setHasInteracted(true);
+          
         }
       } else {
         setMessages([WELCOME_MESSAGE]);
         setHasInteracted(false);
+        setShowAnimation(false);
       }
       setMessage('');
       setMessageBeingEdited(null);
@@ -73,7 +75,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
 
     initializeChat();
   }, [chatId]);
-
+// New useEffect to set animation visibility when a chat is selected
+useEffect(() => {
+  if (chatId) {
+    setShowAnimation(true); // Trigger the animation on chat selection
+  }
+}, [chatId]);
   const handleResourceClick = (title: string) => {
     setMessage(`I'd like to talk about ${title.toLowerCase()}`);
     setHasInteracted(true);
@@ -82,7 +89,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       inputRef.current?.focus();
     }, 100);
   };
-
+  
   const sendMessage = async (messageContent: string) => {
     if (!messageContent.trim()) return;
 
@@ -103,6 +110,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       if (!chatId) {
         const chat = await createChat(auth.currentUser.uid, newMessage);
         onNewChat(chat.id);
+        setShowAnimation(false);
       } else {
         await updateChat(chatId, updatedMessages);
       }

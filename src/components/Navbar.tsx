@@ -9,7 +9,6 @@ import {
 } from 'firebase/auth';
 import { getChats, ChatSession } from '../utils/ChatStorage';
 
-
 interface NavbarProps {
   onUserSignIn: (photoURL: string) => void;
   onUserSignOut: () => void;
@@ -24,18 +23,18 @@ const Navbar: React.FC<NavbarProps> = ({
   currentChatId,
 }) => {
   const [isAboutModal, setIsAboutModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Set initial state to "signed out"
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [menuOpenChatId, setMenuOpenChatId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setIsLoggedIn(true);
+        setIsLoggedIn(true); // Sets logged-in state only if user is detected
         onUserSignIn(user.photoURL || '');
         loadChatHistory(user.uid);
       } else {
-        setIsLoggedIn(false);
+        setIsLoggedIn(false); // Ensures user remains signed out initially
         onUserSignOut();
         setChatHistory([]);
       }
@@ -55,16 +54,16 @@ const Navbar: React.FC<NavbarProps> = ({
     try {
       const result = await signInWithPopup(auth, provider);
       onUserSignIn(result.user.photoURL || '');
-      setIsModalOpen(false);
     } catch (error) {
       console.error('Error signing in with Google:', error);
     }
   };
+
   const truncateTitle = (title: string) => {
     const words = title.split(' ');
     return words.slice(0, 4).join(' ') + (words.length > 4 ? '...' : '');
   };
-  
+
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -78,11 +77,11 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleDeleteChat = async (chatId: string) => {
     const storedChats = localStorage.getItem('niraama_chats');
     if (!storedChats) return;
-    
+
     const chats: ChatSession[] = JSON.parse(storedChats);
-    const updatedChats = chats.filter(chat => chat.id !== chatId);
+    const updatedChats = chats.filter((chat) => chat.id !== chatId);
     localStorage.setItem('niraama_chats', JSON.stringify(updatedChats));
-    
+
     if (auth.currentUser) {
       loadChatHistory(auth.currentUser.uid);
     }
@@ -119,9 +118,7 @@ const Navbar: React.FC<NavbarProps> = ({
             <div
               key={chat.id}
               className={`group relative flex items-center ${
-                currentChatId === chat.id
-                  ? 'bg-gray-800'
-                  : 'hover:bg-gray-800'
+                currentChatId === chat.id ? 'bg-gray-800' : 'hover:bg-gray-800'
               } rounded-lg transition-colors`}
             >
               <button
@@ -130,7 +127,7 @@ const Navbar: React.FC<NavbarProps> = ({
               >
                 <MessageSquare className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate text-sm">
-                {truncateTitle(chat.title || 'New Chat')}
+                  {truncateTitle(chat.title || 'New Chat')}
                 </span>
               </button>
               <div className="relative px-2">
@@ -140,9 +137,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     setMenuOpenChatId(menuOpenChatId === chat.id ? null : chat.id);
                   }}
                   className={`p-1 rounded hover:bg-gray-700 ${
-                    menuOpenChatId === chat.id
-                      ? 'opacity-100'
-                      : 'opacity-0 group-hover:opacity-100'
+                    menuOpenChatId === chat.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   } transition-opacity`}
                 >
                   <MoreVertical className="w-4 h-4" />
@@ -202,13 +197,11 @@ const Navbar: React.FC<NavbarProps> = ({
               <h2 className="text-2xl font-semibold mb-4">About Niraama</h2>
               <p className="mb-4">
                 Niraama is an advanced AI-powered tool designed to enhance mental
-                health and well-being with a level of empathy and insight that
-                feels human.
+                health and well-being with a level of empathy and insight that feels human.
               </p>
               <p className="mb-4">
                 Created by Supratip Bhattacharya, Niraama combines cutting-edge AI
-                technology with mental health expertise to provide personalized
-                support and guidance.
+                technology with mental health expertise to provide personalized support and guidance.
               </p>
               <button
                 onClick={() => setIsAboutModal(false)}
