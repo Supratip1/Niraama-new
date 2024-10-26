@@ -109,7 +109,7 @@ const Navbar: React.FC<NavbarProps> = ({
         New Chat
       </button>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto navbar-scrollbar">
         <div className="space-y-1">
           {chatHistory.map((chat) => (
             <div
