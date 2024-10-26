@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, Plus, MoreVertical, Trash2, MessageSquare, X } from 'lucide-react';
+import { Brain, Plus, Trash2, MessageSquare, X } from 'lucide-react';
 import { auth } from '../Auth';
 import {
   signInWithPopup,
@@ -23,18 +23,17 @@ const Navbar: React.FC<NavbarProps> = ({
   currentChatId,
 }) => {
   const [isAboutModal, setIsAboutModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Set initial state to "signed out"
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
-  const [menuOpenChatId, setMenuOpenChatId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setIsLoggedIn(true); // Sets logged-in state only if user is detected
+        setIsLoggedIn(true);
         onUserSignIn(user.photoURL || '');
         loadChatHistory(user.uid);
       } else {
-        setIsLoggedIn(false); // Ensures user remains signed out initially
+        setIsLoggedIn(false);
         onUserSignOut();
         setChatHistory([]);
       }
@@ -50,7 +49,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' }); // Forces Google to prompt account selection
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
       const result = await signInWithPopup(auth, provider);
       onUserSignIn(result.user.photoURL || '');
@@ -89,12 +88,10 @@ const Navbar: React.FC<NavbarProps> = ({
     if (currentChatId === chatId) {
       onChatSelect(null);
     }
-    setMenuOpenChatId(null);
   };
 
   const handleNewChat = () => {
     onChatSelect(null);
-    setMenuOpenChatId(null);
   };
 
   return (
@@ -117,43 +114,27 @@ const Navbar: React.FC<NavbarProps> = ({
           {chatHistory.map((chat) => (
             <div
               key={chat.id}
-              className={`group relative flex items-center ${
+              className={`group flex items-center justify-between p-2 rounded-lg ${
                 currentChatId === chat.id ? 'bg-gray-800' : 'hover:bg-gray-800'
-              } rounded-lg transition-colors`}
+              } transition-colors`}
             >
               <button
                 onClick={() => onChatSelect(chat.id)}
-                className="flex-1 flex items-center gap-2 px-3 py-2.5 text-left"
+                className="flex-1 flex items-center gap-2 text-left min-w-0" // Allow truncation
+                style={{ minWidth: '0' }} // Ensures it can shrink properly
               >
                 <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate text-sm">
+                <span className="truncate text-sm" title={chat.title || 'New Chat'}>
                   {truncateTitle(chat.title || 'New Chat')}
                 </span>
               </button>
-              <div className="relative px-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpenChatId(menuOpenChatId === chat.id ? null : chat.id);
-                  }}
-                  className={`p-1 rounded hover:bg-gray-700 ${
-                    menuOpenChatId === chat.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  } transition-opacity`}
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-                {menuOpenChatId === chat.id && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-gray-800 rounded-lg shadow-lg py-1 z-50">
-                    <button
-                      onClick={() => handleDeleteChat(chat.id)}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete chat
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button
+                onClick={() => handleDeleteChat(chat.id)}
+                className="ml-2 p-1 rounded text-red-400 hover:bg-gray-700"
+                title="Delete chat"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           ))}
         </div>
