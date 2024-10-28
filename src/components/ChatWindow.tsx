@@ -201,35 +201,51 @@ useEffect(() => {
   const handleEditMessageSave = async () => {
     if (!messageBeingEdited) return;
 
+    // Step 1: Update the edited message in the message list
     const updatedMessages = messages.map(msg =>
-      msg.id === messageBeingEdited.id ? messageBeingEdited : msg
+        msg.id === messageBeingEdited.id ? messageBeingEdited : msg
     );
 
     setMessages(updatedMessages);
     setMessageBeingEdited(null);
 
     if (auth.currentUser && chatId) {
-      await updateChat(chatId, updatedMessages);
+        await updateChat(chatId, updatedMessages);
     }
 
     setIsTyping(true);
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: crypto.randomUUID(),
-        type: 'text',
-        content: `I understand you've revised your message. Let me respond to what you're saying now...`,
-        sender: 'bot',
-        timestamp: Date.now(),
-      };
-      const newMessages = [...updatedMessages, botMessage];
-      setMessages(newMessages);
-      setIsTyping(false);
-      
-      if (auth.currentUser && chatId) {
-        updateChat(chatId, newMessages);
-      }
-    }, 1500);
-  };
+
+    try {
+        // Step 2: Send the edited message to the API to get a dynamic response
+        const result = await axios.post('http://localhost:8000/chat', {
+            message: messageBeingEdited.content,
+        });
+
+        // Step 3: Retrieve the bot's response from the API
+        const botResponse = result.data.response || "I couldn't understand your revised message.";
+
+        // Step 4: Create a new message object for the bot's response
+        const botMessage: Message = {
+            id: crypto.randomUUID(),
+            type: 'text',
+            content: botResponse,
+            sender: 'bot',
+            timestamp: Date.now(),
+        };
+
+        // Step 5: Update the message list with the bot's response
+        const newMessages = [...updatedMessages, botMessage];
+        setMessages(newMessages);
+
+        if (auth.currentUser && chatId) {
+            await updateChat(chatId, newMessages);
+        }
+    } catch (error) {
+        console.error("Error fetching bot response for edited message:", error);
+    } finally {
+        setIsTyping(false); // Stop the typing indicator
+    }
+};
 
   const handleMicClick = () => {
     if (!recognitionRef.current) return;
