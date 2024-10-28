@@ -52,13 +52,14 @@ const App = () => {
         onUserSignOut={handleUserSignOut}
         onChatSelect={handleChatSelect}
         currentChatId={currentChatId}
+        className="flex-none w-64" // Fixed width for the Navbar
       />
-      <div className="w-px bg-gray-200"></div>
-      <div className="flex-1">
+      <div className="flex flex-1 flex-col">
         <ChatWindow 
           userPhotoURL={userPhotoURL}
           chatId={currentChatId}
           onNewChat={(chatId) => setCurrentChatId(chatId)}
+          className="flex-1" // Allow ChatWindow to fill remaining space
         />
         <BackgroundMusic />
       </div>

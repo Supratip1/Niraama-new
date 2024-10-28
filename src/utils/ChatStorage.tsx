@@ -32,6 +32,40 @@ const BOT_RESPONSE: Message = {
   sender: 'bot',
   timestamp: Date.now(),
 };
+export const sendMessageToBot = async (userMessage: string): Promise<Message> => {
+  try {
+    const response = await fetch("http://localhost:8000/chat", {
+      method: "POST",
+      headers: {
+        "Authorization": "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", // Use your token here
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: userMessage }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch response from bot.");
+    }
+
+    const data = await response.json();
+    return {
+      id: crypto.randomUUID(),
+      type: 'text',
+      content: data.response, // Assuming your FastAPI returns { response: "..." }
+      sender: 'bot',
+      timestamp: Date.now(),
+    };
+  } catch (error) {
+    console.error("Error sending message to bot:", error);
+    return {
+      id: crypto.randomUUID(),
+      type: 'text',
+      content: "Sorry, I couldn't get a response from the bot.",
+      sender: 'bot',
+      timestamp: Date.now(),
+    };
+  }
+};
 
 export const createChat = async (userId: string, firstMessage: Message): Promise<ChatSession> => {
   const chat: ChatSession = {
@@ -40,8 +74,7 @@ export const createChat = async (userId: string, firstMessage: Message): Promise
     title: firstMessage.content.slice(0, 50) + '...',
     messages: [
       { ...WELCOME_MESSAGE, timestamp: Date.now() - 2000 },
-      firstMessage,
-      { ...BOT_RESPONSE, id: crypto.randomUUID(), timestamp: Date.now() }
+      firstMessage,  // Initial user message
     ],
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -49,6 +82,15 @@ export const createChat = async (userId: string, firstMessage: Message): Promise
 
   const chats = await getChats(userId);
   localStorage.setItem(STORAGE_KEY, JSON.stringify([chat, ...chats]));
+
+  // Get the bot's response from FastAPI
+  const botMessage = await sendMessageToBot(firstMessage.content);
+  chat.messages.push(botMessage); // Add bot response to messages
+  chat.updatedAt = Date.now();
+
+  // Update the chat in local storage
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([chat, ...chats]));
+
   return chat;
 };
 
