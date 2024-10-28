@@ -75,6 +75,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
 
     initializeChat();
   }, [chatId]);
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setHasInteracted(false);  // Reset to show welcome page on login
+        setMessages([WELCOME_MESSAGE]);
+        setShowAnimation(false)  // Optional: reset to welcome message
+      }
+    });
+  
+    return () => unsubscribe();
+  }, []);
 // New useEffect to set animation visibility when a chat is selected
 useEffect(() => {
   if (chatId) {
@@ -201,6 +212,7 @@ useEffect(() => {
   const handleMicClick = () => {
     if (!recognitionRef.current) return;
     setHasInteracted(true);
+    setShowAnimation(true);
     if (isListening) {
       recognitionRef.current.stop();
     } else {
