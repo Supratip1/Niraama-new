@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, Mic, Edit2, User, Brain, Heart, Users, Coffee } from 'lucide-react';
 import { auth } from '../Auth';
 import TypingAnimation from './TypingAnimation';
+import axios from 'axios';
+
 import { Message, createChat, getChat, updateChat } from '../utils/ChatStorage';
 import AnimatedBackground from './AnimatedBackground';
 interface ChatWindowProps {
@@ -103,7 +105,7 @@ useEffect(() => {
   
   const sendMessage = async (messageContent: string) => {
     if (!messageContent.trim()) return;
-
+  
     setHasInteracted(true);
     const newMessage: Message = {
       id: crypto.randomUUID(),
@@ -112,11 +114,11 @@ useEffect(() => {
       sender: 'user',
       timestamp: Date.now(),
     };
-
+  
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
     setMessage('');
-
+  
     if (auth.currentUser) {
       if (!chatId) {
         const chat = await createChat(auth.currentUser.uid, newMessage);
@@ -126,25 +128,38 @@ useEffect(() => {
         await updateChat(chatId, updatedMessages);
       }
     }
-
+  
     setIsTyping(true);
-    setTimeout(() => {
+    
+    // Call your model API here
+    try {
+      const response = await axios.post('http://localhost:8000/chat', { message: messageContent });
+      const botResponse = response.data.reply; // Adjust this based on your API response structure
+  
       const botMessage: Message = {
         id: crypto.randomUUID(),
         type: 'text',
-        content: "I'm here to listen and support you. Would you like to tell me more about what's on your mind?",
+        content: botResponse,
         sender: 'bot',
         timestamp: Date.now(),
       };
+  
+      // Update messages state with the bot's response
       const messagesWithBot = [...updatedMessages, botMessage];
       setMessages(messagesWithBot);
-      setIsTyping(false);
-      
+  
+      // Update the chat in the database if user is authenticated
       if (auth.currentUser && chatId) {
-        updateChat(chatId, messagesWithBot);
+        await updateChat(chatId, messagesWithBot); // Await if updateChat is async
       }
-    }, 2000);
+    } catch (error) {
+      console.error("Error fetching bot response:", error);
+    } finally {
+      setIsTyping(false); // Hide typing animation regardless of success or failure
+    }
   };
+  
+    
 
   const handleSendMessage = () => {
     sendMessage(message);
@@ -299,7 +314,7 @@ useEffect(() => {
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-gray-50 relative">
+    <div className="flex flex-col h-full w-full bg-gray-50 relative overflow-y-auto">
        {/* Animated Background - Only shown after user interacts */}
        {showAnimation && <AnimatedBackground />} 
       <div className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-gray-200">
