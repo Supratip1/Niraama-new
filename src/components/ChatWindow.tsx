@@ -130,12 +130,13 @@ useEffect(() => {
     }
   
     setIsTyping(true);
-    
-    // Call your model API here
+    console.log("Typing animation should appear now");
+  
     try {
       const response = await axios.post('http://localhost:8000/chat', { message: messageContent });
-      const botResponse = response.data.reply; // Adjust this based on your API response structure
+      console.log("Bot response received:", response);
   
+      const botResponse = response.data.reply; // Ensure this is valid
       const botMessage: Message = {
         id: crypto.randomUUID(),
         type: 'text',
@@ -144,20 +145,19 @@ useEffect(() => {
         timestamp: Date.now(),
       };
   
-      // Update messages state with the bot's response
-      const messagesWithBot = [...updatedMessages, botMessage];
-      setMessages(messagesWithBot);
+      setMessages((prevMessages) => [...prevMessages, botMessage]); // Add bot reply to message list
+      console.log("Updated messages with bot reply:", messages);
   
-      // Update the chat in the database if user is authenticated
       if (auth.currentUser && chatId) {
-        await updateChat(chatId, messagesWithBot); // Await if updateChat is async
+        await updateChat(chatId, [...updatedMessages, botMessage]);
       }
     } catch (error) {
       console.error("Error fetching bot response:", error);
     } finally {
-      setIsTyping(false); // Hide typing animation regardless of success or failure
+      setTimeout(() => setIsTyping(false), 500); // Short delay to ensure typing shows
     }
   };
+  
   
     
 
