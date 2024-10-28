@@ -131,12 +131,18 @@ useEffect(() => {
   
     setIsTyping(true);
     console.log("Typing animation should appear now");
+    console.log("Sending message to API:", messageContent); // Log the message being sent
   
     try {
-      const response = await axios.post('http://localhost:8000/chat', { message: messageContent });
-      console.log("Bot response received:", response);
+      const result = await axios.post('http://localhost:8000/chat', { message: messageContent });
+      
+      // Log the entire response from the API
+      console.log("Full response from API:", result);
   
-      const botResponse = response.data.reply; // Ensure this is valid
+      // Ensure this is valid
+      const botResponse = result.data.response || "Sorry, I couldn’t understand that."; 
+      console.log("Bot response content:", botResponse); 
+  
       const botMessage: Message = {
         id: crypto.randomUUID(),
         type: 'text',
@@ -145,8 +151,9 @@ useEffect(() => {
         timestamp: Date.now(),
       };
   
-      setMessages((prevMessages) => [...prevMessages, botMessage]); // Add bot reply to message list
-      console.log("Updated messages with bot reply:", messages);
+      // Update messages with bot reply
+      setMessages((prevMessages) => [...prevMessages, botMessage]); 
+      console.log("Updated messages with bot reply:", botMessage); 
   
       if (auth.currentUser && chatId) {
         await updateChat(chatId, [...updatedMessages, botMessage]);
