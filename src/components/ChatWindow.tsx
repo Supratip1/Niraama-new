@@ -82,13 +82,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
   useEffect(() => {
     const initializeChat = async () => {
       if (chatId) {
+        // Existing chat: load messages from storage
         const chat = await getChat(chatId);
         if (chat) {
           setMessages(chat.messages);
           setHasInteracted(true);
-          
         }
       } else {
+        // New chat: only set welcome message if messages are empty
         setMessages([WELCOME_MESSAGE]);
         setHasInteracted(false);
         setShowAnimation(false);
@@ -96,20 +97,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userPhotoURL, chatId, onNewChat
       setMessage('');
       setMessageBeingEdited(null);
     };
-
+  
     initializeChat();
-  }, [chatId]);
+  }, [chatId]); // Use chatId as the dependency
+  
+  
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        setHasInteracted(false);  // Reset to show welcome page on login
+        // Reset welcome message when auth state changes
+        setHasInteracted(false);
         setMessages([WELCOME_MESSAGE]);
-        setShowAnimation(false)  // Optional: reset to welcome message
+        setShowAnimation(false);
       }
     });
   
     return () => unsubscribe();
-  }, []);
+  }, []); // No dependency on messages.length
+  
 // New useEffect to set animation visibility when a chat is selected
 useEffect(() => {
   if (chatId) {
@@ -126,7 +131,8 @@ useEffect(() => {
   };
   
   const sendMessage = async (messageContent: string) => {
-    if (!messageContent.trim()) return;
+    // Check for empty input and `isTyping` to prevent duplicate API calls
+    if (!messageContent.trim() || isTyping) return;
   
     setHasInteracted(true);
     const newMessage: Message = {
@@ -140,7 +146,7 @@ useEffect(() => {
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
     setMessage('');
-  
+    setIsAnimationActive(true); 
     if (auth.currentUser) {
       if (!chatId) {
         const chat = await createChat(auth.currentUser.uid, newMessage);
@@ -153,17 +159,14 @@ useEffect(() => {
   
     setIsTyping(true);
     console.log("Typing animation should appear now");
-    console.log("Sending message to API:", messageContent); // Log the message being sent
+    console.log("Sending message to API:", messageContent);
   
     try {
       const result = await axios.post('http://localhost:8000/chat', { message: messageContent });
-      
-      // Log the entire response from the API
       console.log("Full response from API:", result);
   
-      // Ensure this is valid
-      const botResponse = result.data.response || "Sorry, I couldn’t understand that."; 
-      console.log("Bot response content:", botResponse); 
+      const botResponse = result.data.response || "Sorry, I couldn’t understand that.";
+      console.log("Bot response content:", botResponse);
   
       const botMessage: Message = {
         id: crypto.randomUUID(),
@@ -173,9 +176,16 @@ useEffect(() => {
         timestamp: Date.now(),
       };
   
-      // Update messages with bot reply
-      setMessages((prevMessages) => [...prevMessages, botMessage]); 
-      console.log("Updated messages with bot reply:", botMessage); 
+      // Prevent duplicate bot messages by checking the last message's content and sender
+      setMessages((prevMessages) => {
+        const lastMessage = prevMessages[prevMessages.length - 1];
+        if (lastMessage?.sender === 'bot' && lastMessage.content === botResponse) {
+          return prevMessages; // Don't add duplicate bot response
+        }
+        return [...prevMessages, botMessage];
+      });
+  
+      console.log("Updated messages with bot reply:", botMessage);
   
       if (auth.currentUser && chatId) {
         await updateChat(chatId, [...updatedMessages, botMessage]);
@@ -183,9 +193,10 @@ useEffect(() => {
     } catch (error) {
       console.error("Error fetching bot response:", error);
     } finally {
-      setTimeout(() => setIsTyping(false), 500); // Short delay to ensure typing shows
+      setTimeout(() => setIsTyping(false), 500); // Delay ensures `isTyping` resets after showing
     }
   };
+  
   
   
     const exampleBotMessage = [
