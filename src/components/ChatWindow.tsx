@@ -146,7 +146,7 @@ useEffect(() => {
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
     setMessage('');
-    setIsAnimationActive(true); 
+    setShowAnimation(true)
     if (auth.currentUser) {
       if (!chatId) {
         const chat = await createChat(auth.currentUser.uid, newMessage);
