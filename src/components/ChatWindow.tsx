@@ -166,7 +166,60 @@ useEffect(() => {
   };
   
   
-    
+    const exampleBotMessage = [
+  { type: 'heading', content: 'Welcome to Niraama' },
+  { type: 'subheading', content: 'How can I help you today?' },
+  {
+    type: 'paragraph',
+    content:
+      'We are here to support you in various aspects of mental health. Feel free to reach out anytime.',
+  },
+  {
+    type: 'list',
+    items: [
+      'Feeling anxious? Let\'s explore coping strategies.',
+      'Need support? Share what\'s on your mind.',
+      'Relationship issues? Let\'s talk about your connections.',
+    ],
+  },
+];
+const renderFormattedMessage = (messageSections) => (
+  <div>
+    {messageSections.map((section, index) => {
+      switch (section.type) {
+        case 'heading':
+          return (
+            <h1 key={index} className="text-xl font-bold mb-2 text-gray-900">
+              {section.content}
+            </h1>
+          );
+        case 'subheading':
+          return (
+            <h2 key={index} className="text-lg font-semibold mb-1 text-gray-800">
+              {section.content}
+            </h2>
+          );
+        case 'paragraph':
+          return (
+            <p key={index} className="text-gray-700 mb-2 leading-relaxed">
+              {section.content}
+            </p>
+          );
+        case 'list':
+          return (
+            <ul key={index} className="list-disc list-inside text-gray-700 space-y-1 pl-4">
+              {section.items.map((item, itemIndex) => (
+                <li key={itemIndex}>{item}</li>
+              ))}
+            </ul>
+          );
+        default:
+          return null;
+      }
+    })}
+  </div>
+);
+
 
   const handleSendMessage = () => {
     sendMessage(message);
@@ -377,61 +430,76 @@ useEffect(() => {
           </div>
         ) : (
           <>
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`relative flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                onMouseEnter={() => setHoveredMessageId(msg.id)}
-                onMouseLeave={() => setHoveredMessageId(null)}
-              >
-                <div
-                  className={`max-w-[70%] p-3 rounded-lg shadow-sm ${
-                    msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'
-                  }`}
-                >
-                  {msg.id === messageBeingEdited?.id ? (
-                    <div>
-                      <input
-                        type="text"
-                        value={messageBeingEdited.content}
-                        onChange={(e) =>
-                          setMessageBeingEdited({
-                            ...messageBeingEdited,
-                            content: e.target.value,
-                          })
-                        }
-                        className="p-2 border rounded text-gray-800 w-full"
-                        autoFocus
-                      />
-                      <button
-                        onClick={handleEditMessageSave}
-                        className="ml-2 text-blue-200 hover:text-white"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  ) : msg.type === 'text' ? (
-                    <>
-                      <span>{msg.content}</span>
-                      {msg.sender === 'user' && hoveredMessageId === msg.id && (
-                        <button
-                          className="absolute top-1 right-2"
-                          onClick={() => setMessageBeingEdited({ ...msg })}
-                        >
-                          <Edit2 className="w-4 h-4 text-white" />
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <img
-                      src={msg.content}
-                      alt="Uploaded"
-                      className="max-w-xs rounded"
-                    />
-                  )}
-                </div>
-              </div>
-            ))}
+           {messages.map((msg) => (
+  <div
+    key={msg.id}
+    className={`relative flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+    onMouseEnter={() => setHoveredMessageId(msg.id)}
+    onMouseLeave={() => setHoveredMessageId(null)}
+  >
+    <div
+      className={`max-w-[70%] p-4 rounded-3xl shadow-lg transition-all duration-300 ${
+        msg.sender === 'user'
+          ? 'bg-blue-500 text-white'
+          : 'bg-gradient-to-r from-blue-50 to-blue-100 text-gray-800 border border-blue-200 animate-fade-in'
+      }`}
+      style={{
+        animation: 'fadeIn 0.3s ease-in-out',
+        whiteSpace: 'pre-wrap', // Ensures line breaks are respected
+        wordWrap: 'break-word', // Allows longer words to wrap
+        lineHeight: '1.5', // Increase readability for longer replies
+        fontSize: msg.content.length > 100 ? '1rem' : '1.1rem', // Slightly smaller text for long replies
+      }}
+    >
+      {msg.id === messageBeingEdited?.id ? (
+        <div>
+          <input
+            type="text"
+            value={messageBeingEdited.content}
+            onChange={(e) =>
+              setMessageBeingEdited({
+                ...messageBeingEdited,
+                content: e.target.value,
+              })
+            }
+            className="p-2 border rounded text-gray-800 w-full"
+            autoFocus
+          />
+          <button
+            onClick={handleEditMessageSave}
+            className="ml-2 text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            Save
+          </button>
+        </div>
+      ) : msg.type === 'text' ? (
+        <>
+          {/* Check if message is long and format accordingly */}
+          <span className="text-sm leading-relaxed">
+            {msg.content.length > 120
+              ? msg.content.match(/(.{1,120})(\s|$)/g)?.join('\n')
+              : msg.content}
+          </span>
+          {msg.sender === 'user' && hoveredMessageId === msg.id && (
+            <button
+              className="absolute top-1 right-2"
+              onClick={() => setMessageBeingEdited({ ...msg })}
+            >
+              <Edit2 className="w-4 h-4 text-white opacity-80 hover:opacity-100 transition-opacity" />
+            </button>
+          )}
+        </>
+      ) : (
+        <img
+          src={msg.content}
+          alt="Uploaded"
+          className="max-w-xs rounded-lg shadow-md"
+        />
+      )}
+    </div>
+  </div>
+))}
+
             {isTyping && (
               <div className="flex justify-start">
                 <TypingAnimation />
