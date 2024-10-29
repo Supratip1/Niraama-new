@@ -48,6 +48,22 @@ html, body {
     bottom: 0;
     z-index: 50;
   }
+  #root {
+    height: 100vh;
+  }
+  .content {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Adjusts content to avoid excess space */
+    height: 100vh;
+  }
+  #root {
+    overflow-y: auto;
+  }
 }
 /* Custom scrollbar styles */
 .navbar-scrollbar::-webkit-scrollbar {

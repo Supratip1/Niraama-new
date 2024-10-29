@@ -11,6 +11,28 @@ interface ChatWindowProps {
   chatId: string | null;
   onNewChat: (chatId: string) => void;
 }
+interface HeadingSection {
+  type: 'heading';
+  content: string;
+}
+
+interface SubheadingSection {
+  type: 'subheading';
+  content: string;
+}
+
+interface ParagraphSection {
+  type: 'paragraph';
+  content: string;
+}
+
+interface ListSection {
+  type: 'list';
+  items: string[];
+}
+
+// Union type for all section types
+type MessageSection = HeadingSection | SubheadingSection | ParagraphSection | ListSection;
 
 const WELCOME_MESSAGE: Message = {
   id: crypto.randomUUID(),
@@ -183,7 +205,7 @@ useEffect(() => {
     ],
   },
 ];
-const renderFormattedMessage = (messageSections) => (
+const renderFormattedMessage = (messageSections: MessageSection[]) => (
   <div>
     {messageSections.map((section, index) => {
       switch (section.type) {
@@ -214,11 +236,12 @@ const renderFormattedMessage = (messageSections) => (
             </ul>
           );
         default:
-          return null;
+          return null; // Although TypeScript should ensure this is not reached
       }
     })}
   </div>
 );
+
 
 
   const handleSendMessage = () => {
